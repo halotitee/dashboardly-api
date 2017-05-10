@@ -2,6 +2,8 @@ const express = require('express');
 
 const onlyLoggedIn = require('../lib/only-logged-in');
 
+const md5 = require('md5');
+
 module.exports = (dataLoader) => {
   const authController = express.Router();
 
@@ -41,8 +43,18 @@ module.exports = (dataLoader) => {
 
   // Retrieve current user
   authController.get('/me', onlyLoggedIn, (req, res) => {
-    // TODO: this is up to you to implement :)
-    res.status(500).json({ error: 'not implemented' });
+    dataLoader.getUserFromSession(req.sessionToken)
+      // gravatar has been setup here
+      .then(
+        function (user) {
+          //console.log(user) it will return we need users_email
+          user.avatarUrl = 'https://www.gravatar.com/avatar/' + md5(user.users_email.toLowerCase().trim());
+          //console.log(user); it will return hashed avatarUrl
+          return user;
+        }
+      )
+      .then(user => res.status(204).json(user))       //get user from session
+      .catch(err => res.status(400).json(err));
   });
 
   return authController;
